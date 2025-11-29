@@ -62,6 +62,10 @@ import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
+import android.content.om.IOverlayManager;
+import android.content.om.OverlayInfo;
+import android.os.ServiceManager;
+import android.os.RemoteException;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -821,6 +825,22 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
             Log.d(TAG, "ThemeHomeDelay: ThemeOverlayController ready with user "
                     + currentUser);
             mActivityManager.setThemeOverlayReady(currentUser);
+            try {
+                IOverlayManager om = IOverlayManager.Stub.asInterface(
+                        ServiceManager.getService(Context.OVERLAY_SERVICE));
+                
+                final String blackThemePkg = "com.android.overlay.customization.blacktheme";
+
+                // ERROR WAS HERE: We don't need UserHandle.of(), just use 'currentUser' (int)
+                OverlayInfo info = om.getOverlayInfo(blackThemePkg, currentUser);
+                
+                if (info != null && info.isEnabled()) {
+                    om.setHighestPriority(blackThemePkg, currentUser);
+                    if (DEBUG) Log.d(TAG, "Enforced highest priority for Black Theme");
+                }
+            } catch (RemoteException | NullPointerException e) {
+                Log.w(TAG, "Failed to enforce Black Theme priority", e);
+            }
         };
 
         if (colorSchemeIsApplied(managedProfiles)) {

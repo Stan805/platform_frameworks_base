@@ -123,6 +123,7 @@ public class Clock extends TextView implements
                 public void onUserChanged(int newUser, @NonNull Context userContext) {
                     mCurrentUserId = newUser;
                     updateClock();
+                    updateSecondsDecision();
                 }
             };
 
@@ -183,6 +184,16 @@ public class Clock extends TextView implements
         }
     }
 
+    private final BroadcastReceiver mSettingsReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (PowerManager.ACTION_POWER_SAVE_MODE_CHANGED.equals(action)) {
+                getHandler().post(() -> updateSecondsDecision());
+            }
+        }
+    };
+
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
@@ -198,8 +209,11 @@ public class Clock extends TextView implements
             filter.addAction(Intent.ACTION_TIME_CHANGED);
             filter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
             filter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
-            filter.addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED);
             mBroadcastDispatcher.registerReceiverWithHandler(mIntentReceiver, filter,
+                    Dependency.get(Dependency.TIME_TICK_HANDLER), UserHandle.ALL);
+            IntentFilter settingsFilter = new IntentFilter();
+            settingsFilter.addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED);
+            mBroadcastDispatcher.registerReceiverWithHandler(mSettingsReceiver, settingsFilter, 
                     Dependency.get(Dependency.TIME_TICK_HANDLER), UserHandle.ALL);
             Dependency.get(TunerService.class).addTunable(this, CLOCK_SECONDS, "clock_seconds_mode",
                     StatusBarIconController.ICON_HIDE_LIST);
@@ -231,6 +245,7 @@ public class Clock extends TextView implements
             Dependency.get(TunerService.class).removeTunable(this);
             mCommandQueue.removeCallback(this);
             mUserTracker.removeCallback(mUserChangedCallback);
+            mBroadcastDispatcher.unregisterReceiver(mSettingsReceiver);
         }
     }
 
@@ -428,7 +443,7 @@ public class Clock extends TextView implements
     }
 
     private void updateSecondsDecision() {
-        int mode = Settings.Secure.getInt(mContext.getContentResolver(), "clock_seconds_mode", 0);
+        int mode = Settings.Secure.getIntForUser(mContext.getContentResolver(), "clock_seconds_mode", 0, mCurrentUserId);
         PowerManager pm = mContext.getSystemService(PowerManager.class);
         boolean isPowerSave = pm != null && pm.isPowerSaveMode();
         boolean shouldShow = false;

@@ -59,6 +59,8 @@ import com.android.systemui.statusbar.core.StatusBarRootModernization;
 import com.android.systemui.statusbar.phone.ui.StatusBarIconController;
 import com.android.systemui.tuner.TunerService;
 import com.android.systemui.tuner.TunerService.Tunable;
+import android.provider.Settings;
+import android.os.PowerManager;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -184,39 +186,32 @@ public class Clock extends TextView implements
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-
+        if (mCalendar == null) {
+            mCalendar = Calendar.getInstance(TimeZone.getDefault());
+        }
+        mContentDescriptionFormatString = "";
+        mDateTimePatternGenerator = null;
         if (!mAttached) {
             mAttached = true;
             IntentFilter filter = new IntentFilter();
-
             filter.addAction(Intent.ACTION_TIME_TICK);
             filter.addAction(Intent.ACTION_TIME_CHANGED);
             filter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
             filter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
-
-            // NOTE: This receiver could run before this method returns, as it's not dispatching
-            // on the main thread and BroadcastDispatcher may not need to register with Context.
-            // The receiver will return immediately if the view does not have a Handler yet.
+            filter.addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED);
             mBroadcastDispatcher.registerReceiverWithHandler(mIntentReceiver, filter,
                     Dependency.get(Dependency.TIME_TICK_HANDLER), UserHandle.ALL);
-            Dependency.get(TunerService.class).addTunable(this, CLOCK_SECONDS,
+            Dependency.get(TunerService.class).addTunable(this, CLOCK_SECONDS, "clock_seconds_mode",
                     StatusBarIconController.ICON_HIDE_LIST);
             mCommandQueue.addCallback(this);
             mUserTracker.addCallback(mUserChangedCallback, mContext.getMainExecutor());
             mCurrentUserId = mUserTracker.getUserId();
         }
-
-        // The time zone may have changed while the receiver wasn't registered, so update the Time
-        mCalendar = Calendar.getInstance(TimeZone.getDefault());
-        mContentDescriptionFormatString = "";
-        mDateTimePatternGenerator = null;
-
-        // Make sure we update to the current time
         updateClock();
         if (!StatusBarRootModernization.isEnabled()) {
             updateClockVisibility();
         }
-        updateShowSeconds();
+        updateSecondsDecision();
     }
 
     @Override
@@ -242,13 +237,13 @@ public class Clock extends TextView implements
     private final BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            // If the handler is null, it means we received a broadcast while the view has not
-            // finished being attached or in the process of being detached.
-            // In that case, do not post anything.
             Handler handler = getHandler();
             if (handler == null) return;
 
             String action = intent.getAction();
+            if (PowerManager.ACTION_POWER_SAVE_MODE_CHANGED.equals(action)) {
+                handler.post(() -> updateSecondsDecision());
+            }
             if (action.equals(Intent.ACTION_TIMEZONE_CHANGED)) {
                 String tz = intent.getStringExtra(Intent.EXTRA_TIMEZONE);
                 handler.post(() -> {
@@ -327,9 +322,8 @@ public class Clock extends TextView implements
 
     @Override
     public void onTuningChanged(String key, String newValue) {
-        if (CLOCK_SECONDS.equals(key)) {
-            mShowSeconds = TunerService.parseIntegerSwitch(newValue, false);
-            updateShowSeconds();
+        if (CLOCK_SECONDS.equals(key) || "clock_seconds_mode".equals(key)) {
+            updateSecondsDecision();
         } else if (!StatusBarRootModernization.isEnabled()) {
             if (StatusBarIconController.ICON_HIDE_LIST.equals(key)) {
                 setClockVisibleByUser(
@@ -409,7 +403,6 @@ public class Clock extends TextView implements
 
     private void updateShowSeconds() {
         if (mShowSeconds) {
-            // Wait until we have a display to start trying to show seconds.
             if (mSecondsHandler == null && getDisplay() != null) {
                 mSecondsHandler = new Handler();
                 if (getDisplay().getState() == Display.STATE_ON) {
@@ -431,6 +424,28 @@ public class Clock extends TextView implements
                 updateClock();
             }
             setFontFeatureSettings(null);
+        }
+    }
+
+    private void updateSecondsDecision() {
+        int mode = Settings.Secure.getInt(mContext.getContentResolver(), "clock_seconds_mode", 0);
+        PowerManager pm = mContext.getSystemService(PowerManager.class);
+        boolean isPowerSave = pm != null && pm.isPowerSaveMode();
+        boolean shouldShow = false;
+        if (mode == 1) {
+            if (isPowerSave) {
+                if (this instanceof QsClock) shouldShow = true;
+            } else {
+                shouldShow = true;
+            }
+        } 
+        else if (mode == 2) {
+            if (this instanceof QsClock) shouldShow = true;
+        }
+        if (mShowSeconds != shouldShow) {
+            mShowSeconds = shouldShow;
+            updateShowSeconds(); 
+            updateClock(); 
         }
     }
 

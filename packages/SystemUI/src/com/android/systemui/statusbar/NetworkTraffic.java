@@ -128,6 +128,7 @@ public class NetworkTraffic extends TextView implements TunerService.Tunable,
     private boolean mHideArrows;
 
     private boolean mVisible = true;
+    private boolean mHasStaticTint = false;
 
     private ConnectivityManager mConnectivityManager;
     private final Handler mTrafficHandler;
@@ -370,18 +371,22 @@ public class NetworkTraffic extends TextView implements TunerService.Tunable,
 
     @Override
     public void onDarkChanged(ArrayList<Rect> areas, float darkIntensity, int tint) {
-        if (isUsingQs)
+        if (isUsingQs || mHasStaticTint) {
             return;
-
+        }
         mTint = DarkIconDispatcher.getTint(areas, this, tint);
         setTextColor(mTint);
     }
 
     @Override
-    public void setStaticDrawableColor(int color) {}
+    public void setStaticDrawableColor(int color) {
+        mHasStaticTint = true;
+        setTextColor(color);
+    }
 
     @Override
     public void setDecorColor(int color) {
+        setTextColor(color);
     }
 
     @Override

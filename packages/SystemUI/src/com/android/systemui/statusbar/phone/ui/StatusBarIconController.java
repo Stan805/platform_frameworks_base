@@ -88,6 +88,9 @@ public interface StatusBarIconController {
      */
     void setNewMobileIconSubIds(List<Integer> subIds);
 
+    /** Sets up the network traffic indicator icon. */
+    void setNetworkTraffic(String slot);
+
     /** Sets whether the icon in the given slot should be visible or not. */
     void setIconVisibility(String slot, boolean b);
 

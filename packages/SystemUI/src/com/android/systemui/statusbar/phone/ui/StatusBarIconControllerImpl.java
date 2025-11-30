@@ -313,6 +313,15 @@ public class StatusBarIconControllerImpl implements Tunable,
         }
     }
 
+    @Override
+    public void setNetworkTraffic(String slot) {
+        StatusBarIconHolder holder = mStatusBarIconList.getIconHolder(slot, /* tag= */ 0);
+        if (holder == null) {
+            holder = StatusBarIconHolder.fromNetworkTraffic();
+            setIcon(slot, holder);
+        }
+    }
+
     /**
      * Accept a list of MobileIconStates, which all live in the same slot(?!), and then are sorted
      * by subId. Don't worry this definitely makes sense and works.

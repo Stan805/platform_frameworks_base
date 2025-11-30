@@ -35,6 +35,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.os.UserManager;
+import android.provider.Settings;
 import android.provider.Settings.Global;
 import android.service.notification.ZenModeConfig;
 import android.telecom.TelecomManager;
@@ -123,6 +124,7 @@ public class PhoneStatusBarPolicy
     private final String mSlotSensorsOff;
     private final String mSlotScreenRecord;
     private final String mSlotConnectedDisplay;
+    private final String mSlotNetworkTraffic;
     private final int mDisplayId;
     private final SharedPreferences mSharedPreferences;
     private final DateFormatUtil mDateFormatUtil;
@@ -155,7 +157,6 @@ public class PhoneStatusBarPolicy
     private final RingerModeTracker mRingerModeTracker;
     private final PrivacyLogger mPrivacyLogger;
     private final ZenModeInteractor mZenModeInteractor;
-
     private boolean mZenVisible;
     private boolean mVibrateVisible;
     private boolean mMuteVisible;
@@ -240,6 +241,8 @@ public class PhoneStatusBarPolicy
         mSlotSensorsOff = resources.getString(com.android.internal.R.string.status_bar_sensors_off);
         mSlotScreenRecord = resources.getString(
                 com.android.internal.R.string.status_bar_screen_record);
+        mSlotNetworkTraffic = resources.getString(
+                com.android.internal.R.string.status_bar_network_traffic);
 
         mDisplayId = displayId;
         mSharedPreferences = sharedPreferences;
@@ -339,6 +342,9 @@ public class PhoneStatusBarPolicy
         // screen record
         mIconController.setIcon(mSlotScreenRecord, R.drawable.stat_sys_screen_record, null);
         mIconController.setIconVisibility(mSlotScreenRecord, false);
+
+        // network traffic - always add the view, it manages its own visibility
+        mIconController.setNetworkTraffic(mSlotNetworkTraffic);
 
         mRotationLockController.addCallback(this);
         mBluetooth.addCallback(this);

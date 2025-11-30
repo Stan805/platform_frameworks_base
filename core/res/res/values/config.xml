@@ -55,6 +55,7 @@
         <item><xliff:g id="id">@string/status_bar_volume</xliff:g></item>
         <item><xliff:g id="id">@string/status_bar_zen</xliff:g></item>
         <item><xliff:g id="id">@string/status_bar_screen_record</xliff:g></item>
+        <item><xliff:g id="id">@string/status_bar_network_traffic</xliff:g></item>
         <item><xliff:g id="id">@string/status_bar_cast</xliff:g></item>
         <item><xliff:g id="id">@string/status_bar_ethernet</xliff:g></item>
         <item><xliff:g id="id">@string/status_bar_oem_satellite</xliff:g></item>
@@ -75,6 +76,7 @@
     <string translatable="false" name="status_bar_sync_failing">sync_failing</string>
     <string translatable="false" name="status_bar_sync_active">sync_active</string>
     <string translatable="false" name="status_bar_cast">cast</string>
+    <string translatable="false" name="status_bar_network_traffic">network_traffic</string>
     <string translatable="false" name="status_bar_connected_display">connected_display</string>
     <string translatable="false" name="status_bar_hotspot">hotspot</string>
     <string translatable="false" name="status_bar_location">location</string>

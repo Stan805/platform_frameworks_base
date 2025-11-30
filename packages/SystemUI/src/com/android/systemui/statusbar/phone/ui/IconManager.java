@@ -19,6 +19,7 @@ package com.android.systemui.statusbar.phone.ui;
 import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_BINDABLE;
 import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_ICON;
 import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_MOBILE_NEW;
+import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_NETWORK_TRAFFIC;
 import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_WIFI_NEW;
 
 import android.annotation.Nullable;
@@ -54,6 +55,7 @@ import com.android.systemui.statusbar.pipeline.shared.ui.view.ModernStatusBarVie
 import com.android.systemui.statusbar.pipeline.wifi.ui.WifiUiAdapter;
 import com.android.systemui.statusbar.pipeline.wifi.ui.view.ModernStatusBarWifiView;
 import com.android.systemui.statusbar.pipeline.wifi.ui.viewmodel.LocationBasedWifiViewModel;
+import com.android.systemui.statusbar.NetworkTraffic;
 import com.android.systemui.util.Assert;
 
 import dagger.Lazy;
@@ -179,6 +181,7 @@ public class IconManager implements DemoModeCommandReceiver {
             case TYPE_BINDABLE ->
                 // Safe cast, since only BindableIconHolders can set this tag on themselves
                     addBindableIcon((BindableIconHolder) holder, index);
+            case TYPE_NETWORK_TRAFFIC -> addNetworkTraffic(index, slot);
             default -> null;
         };
     }
@@ -242,6 +245,16 @@ public class IconManager implements DemoModeCommandReceiver {
 
     private StatusBarIconView onCreateStatusBarIconView(String slot, boolean blocked) {
         return new StatusBarIconView(mContext, slot, null, blocked);
+    }
+
+    protected NetworkTraffic addNetworkTraffic(int index, String slot) {
+        NetworkTraffic view = onCreateNetworkTraffic(slot);
+        mGroup.addView(view, index, onCreateLayoutParams(Shape.WRAP_CONTENT));
+        return view;
+    }
+
+    private NetworkTraffic onCreateNetworkTraffic(String slot) {
+        return NetworkTraffic.fromContext(mContext, slot);
     }
 
     private ModernStatusBarWifiView onCreateModernStatusBarWifiView(String slot) {
@@ -330,6 +343,7 @@ public class IconManager implements DemoModeCommandReceiver {
             case TYPE_MOBILE_NEW:
             case TYPE_WIFI_NEW:
             case TYPE_BINDABLE:
+            case TYPE_NETWORK_TRAFFIC:
                 // Nothing, the new icons update themselves
                 return;
             default:

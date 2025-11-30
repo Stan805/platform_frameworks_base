@@ -34,6 +34,7 @@ import android.view.View;
 
 import com.android.keyguard.AlphaOptimizedLinearLayout;
 import com.android.systemui.res.R;
+import com.android.systemui.statusbar.NetworkTraffic;
 import com.android.systemui.statusbar.StatusIconDisplayable;
 import com.android.systemui.statusbar.notification.stack.AnimationFilter;
 import com.android.systemui.statusbar.notification.stack.AnimationProperties;
@@ -63,6 +64,8 @@ public class StatusIconContainer extends AlphaOptimizedLinearLayout {
     private int mStaticDotDiameter;
     private int mUnderflowWidth;
     private int mUnderflowStart = 0;
+    private final String mSlotNetworkTraffic;
+    private int mNetworkTrafficColor = -1;
     // Whether or not we can draw into the underflow space
     private boolean mNeedsUnderflow;
     // Individual StatusBarIconViews draw their etc dots centered in this width
@@ -85,6 +88,7 @@ public class StatusIconContainer extends AlphaOptimizedLinearLayout {
     public StatusIconContainer(Context context, AttributeSet attrs) {
         super(context, attrs);
         mConfiguration = new Configuration(context.getResources().getConfiguration());
+        mSlotNetworkTraffic = context.getResources().getString(com.android.internal.R.string.status_bar_network_traffic);
         reloadDimens();
         setWillNotDraw(!DEBUG_OVERFLOW);
     }
@@ -96,6 +100,35 @@ public class StatusIconContainer extends AlphaOptimizedLinearLayout {
 
     public void setQsExpansionTransitioning(boolean expansionTransitioning) {
         mQsExpansionTransitioning = expansionTransitioning;
+    }
+
+    public void setIsUsingQs(boolean value) {
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (child instanceof StatusIconDisplayable) {
+                StatusIconDisplayable icon = (StatusIconDisplayable) child;
+
+                if (mSlotNetworkTraffic.equals(icon.getSlot())) {
+                    NetworkTraffic trafficView = (NetworkTraffic) child;
+                    trafficView.setIsUsingQs(value);
+                }
+            }
+        }
+    }
+
+    public void setNetworkTrafficColor(int color) {
+        mNetworkTrafficColor = color;
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (child instanceof StatusIconDisplayable) {
+                StatusIconDisplayable icon = (StatusIconDisplayable) child;
+
+                if (mSlotNetworkTraffic.equals(icon.getSlot())) {
+                    NetworkTraffic trafficView = (NetworkTraffic) child;
+                    trafficView.setTextColor(color);
+                }
+            }
+        }
     }
 
     public void setShouldRestrictIcons(boolean should) {
@@ -231,6 +264,18 @@ public class StatusIconContainer extends AlphaOptimizedLinearLayout {
         StatusIconState vs = new StatusIconState();
         vs.justAdded = true;
         child.setTag(R.id.status_bar_view_state_tag, vs);
+
+        if (child instanceof StatusIconDisplayable) {
+            StatusIconDisplayable icon = (StatusIconDisplayable) child;
+
+            if (mSlotNetworkTraffic.equals(icon.getSlot())) {
+                NetworkTraffic trafficView = (NetworkTraffic) child;
+
+                if (mNetworkTrafficColor != -1) {
+                    trafficView.setTextColor(mNetworkTrafficColor);
+                }
+            }
+        }
     }
 
     @Override

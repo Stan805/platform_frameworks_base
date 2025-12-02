@@ -822,21 +822,23 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
         }
 
         final Runnable onCompleteCallback = () -> {
-            Log.d(TAG, "ThemeHomeDelay: ThemeOverlayController ready with user "
-                    + currentUser);
             mActivityManager.setThemeOverlayReady(currentUser);
             try {
                 IOverlayManager om = IOverlayManager.Stub.asInterface(
                         ServiceManager.getService(Context.OVERLAY_SERVICE));
-                
                 final String blackThemePkg = "com.android.overlay.customization.blacktheme";
-
-                // ERROR WAS HERE: We don't need UserHandle.of(), just use 'currentUser' (int)
-                OverlayInfo info = om.getOverlayInfo(blackThemePkg, currentUser);
-                
-                if (info != null && info.isEnabled()) {
-                    om.setHighestPriority(blackThemePkg, currentUser);
-                    if (DEBUG) Log.d(TAG, "Enforced highest priority for Black Theme");
+                OverlayInfo parentInfo = om.getOverlayInfo(blackThemePkg, currentUser);
+                if (parentInfo != null && parentInfo.isEnabled()) {
+                    List<UserInfo> profiles = mUserManager.getEnabledProfiles(currentUser);
+                    for (UserInfo profile : profiles) {
+                        int profileId = profile.id;
+                        try {
+                            om.setEnabled(blackThemePkg, true, profileId);
+                            om.setHighestPriority(blackThemePkg, profileId);
+                        } catch (RemoteException e) {
+                            Log.w(TAG, "Failed to sync Black Theme for user " + profileId, e);
+                        }
+                    }
                 }
             } catch (RemoteException | NullPointerException e) {
                 Log.w(TAG, "Failed to enforce Black Theme priority", e);

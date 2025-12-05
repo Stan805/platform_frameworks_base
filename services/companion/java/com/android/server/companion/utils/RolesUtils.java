@@ -90,6 +90,12 @@ public final class RolesUtils {
             DEVICE_PROFILE_VIRTUAL_DEVICE, List.of(PERMISSION_CREATE_VIRTUAL_DEVICE,
                             PERMISSION_NEARBY_DEVICES, PERMISSION_POST_NOTIFICATIONS)
     );
+    
+    public static final Set<String> NLS_PROFILES = Set.of(
+            DEVICE_PROFILE_WATCH,
+            DEVICE_PROFILE_GLASSES,
+            DEVICE_PROFILE_APP_STREAMING,
+            DEVICE_PROFILE_COMPUTER);
 
     private static final Set<String> ROLELESS_DEVICE_PROFILES;
     static {

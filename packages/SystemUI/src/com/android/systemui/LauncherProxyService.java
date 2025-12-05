@@ -344,19 +344,25 @@ public class LauncherProxyService implements CallbackController<LauncherProxyLis
         }
 
         @Override
-        public void onBackEvent(@Nullable KeyEvent keyEvent) throws RemoteException {
-            final int displayId = keyEvent == null ? INVALID_DISPLAY : keyEvent.getDisplayId();
+        public void onBackEvent(@Nullable KeyEvent keyEvent, int displayId) throws RemoteException {
             if (predictiveBackThreeButtonNav() && predictiveBackSwipeEdgeNoneApi()
                     && mBackAnimation != null && keyEvent != null) {
                 mBackAnimation.setTriggerBack(!keyEvent.isCanceled());
                 mBackAnimation.onBackMotion(/* touchX */ 0, /* touchY */ 0, keyEvent.getAction(),
                         EDGE_NONE, displayId);
             } else {
-                verifyCallerAndClearCallingIdentityPostMain("onBackPressed", () -> {
-                    sendEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK, displayId);
-                    sendEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK, displayId);
-                });
+                onKeyEvent(KeyEvent.KEYCODE_BACK, displayId);
             }
+        }
+
+        @Override
+        public void onKeyEvent(int keycode, int displayId) {
+            verifyCallerAndClearCallingIdentityPostMain(
+                    "onKeyEvent " + KeyEvent.keyCodeToString(keycode) + " displayId=" + displayId,
+                    () -> {
+                        sendEvent(KeyEvent.ACTION_DOWN, keycode, displayId);
+                        sendEvent(KeyEvent.ACTION_UP, keycode, displayId);
+                    });
         }
 
         @Override

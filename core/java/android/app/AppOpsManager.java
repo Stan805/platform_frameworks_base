@@ -8442,14 +8442,13 @@ public class AppOpsManager {
         } else {
             opCodes = null;
         }
-        final List<AppOpsManager.PackageOps> result;
         try {
-            var listSlice = mService.getPackagesForOpsForDevice(opCodes, persistentDeviceId);
-            result = listSlice != null ? listSlice.getList() : null;
+            ParceledListSlice<PackageOps> packageOps = mService.getPackagesForOpsForDevice(opCodes,
+                    persistentDeviceId);
+            return packageOps == null ? Collections.emptyList() : packageOps.getList();
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
-        return (result != null) ? result : Collections.emptyList();
     }
 
     /**
@@ -8468,9 +8467,9 @@ public class AppOpsManager {
     @UnsupportedAppUsage
     public List<AppOpsManager.PackageOps> getPackagesForOps(int[] ops) {
         try {
-            var listSlice = mService.getPackagesForOpsForDevice(ops,
+            ParceledListSlice<PackageOps> packageOps = mService.getPackagesForOpsForDevice(ops,
                     VirtualDeviceManager.PERSISTENT_DEVICE_ID_DEFAULT);
-            return listSlice != null ? listSlice.getList() : null;
+            return packageOps == null ? null : packageOps.getList();
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
